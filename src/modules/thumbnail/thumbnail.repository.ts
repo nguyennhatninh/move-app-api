@@ -1,5 +1,4 @@
 import { Thumbnail } from '@/entities/thumbnail.entity';
-import { Video } from '@/entities/video.entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOneOptions, FindOptionsOrder, FindOptionsRelations, Repository } from 'typeorm';

@@ -1,10 +1,8 @@
 import { Video } from '@/entities/video.entity';
 import { OPTION, URL_SHARING_CONSTRAINT } from '@/shared/constraints/sharing.constraint';
-import { AwsS3Service } from '@/shared/services/aws-s3.service';
 import { VimeoService } from '@/shared/services/vimeo.service';
 import { objectResponse } from '@/shared/utils/response-metadata.function';
 import { stringToBoolean } from '@/shared/utils/stringToBool.util';
-import { InjectQueue } from '@nestjs/bullmq';
 import {
   BadRequestException,
   ForbiddenException,
@@ -13,7 +11,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Queue } from 'bullmq';
 import { plainToInstance } from 'class-transformer';
 import * as fs from 'fs';
 import { parseInt } from 'lodash';
@@ -43,11 +40,11 @@ import { VideoDetail } from './dto/response/video-detail.dto';
 import { VideoItemDto } from './dto/response/video-item.dto';
 import { UploadVideoDTO } from './dto/upload-video.dto';
 import { VideoRepository } from './video.repository';
-import { ThumbnailRepository } from '../thumbnail/thumbnail.repository';
 import { ViewService } from '../view/view.service';
 import { OverviewVideoResponseDto } from './dto/response/overview-video-response.dto';
 import { NOTIFICATION_TYPE } from '@/shared/constraints/notification-message.constraint';
 import { NotificationService } from '../notification/notification.service';
+import { UploadService } from '@/shared/services/storage-firebase.service';
 
 @Injectable()
 export class VideoService {
@@ -55,7 +52,7 @@ export class VideoService {
   constructor(
     private apiConfig: ApiConfigService,
     private categoryService: CategoryService,
-    private s3: AwsS3Service,
+    private uploadService: UploadService,
     private videoRepository: VideoRepository,
     private vimeoService: VimeoService,
     private readonly categoryRepository: CategoryRepository,
@@ -63,7 +60,6 @@ export class VideoService {
     @Inject(forwardRef(() => ChannelService))
     private readonly channelService: ChannelService,
     private readonly thumbnailService: ThumbnailService,
-    @InjectQueue('upload-s3') private readonly uploadS3Queue: Queue,
     private readonly viewService: ViewService,
     // private readonly donationService: DonationService,
     private readonly i18n: I18nService,
@@ -203,21 +199,6 @@ export class VideoService {
     }
     // await this.channelService.increaseTotalVideo(foundChannel.id);
     // await this.uploadVideoUrlS3(video.id, urlS3);
-    try {
-      await this.uploadS3Queue.add(
-        'upload',
-        {
-          path: pathVideo,
-          videoId: video.id,
-        },
-        {
-          removeOnComplete: true,
-          removeOnFail: false,
-        },
-      );
-    } catch (error) {
-      throw new Error(error);
-    }
 
     const userFollowIds = await this.videoRepository.getUserIdsFollowedByChannelId(foundChannel.id);
     const dataNotification = {
@@ -267,7 +248,7 @@ export class VideoService {
       }
 
       if (thumbnail) {
-        const thumbnailUrl = await this.s3.uploadImage(thumbnail);
+        const thumbnailUrl = await this.uploadService.uploadFile(thumbnail);
 
         await this.thumbnailService.updateThumbnail(thumbnailUrl, true, videoId);
       }
@@ -309,22 +290,6 @@ export class VideoService {
 
   async restoreVideos(videoIds: number[]) {
     await this.videoRepository.restoreVideos(videoIds);
-  }
-
-  async downloadVideo(videoId: number) {
-    const from = this.apiConfig.getString('DOWNLOAD_FROM');
-    switch (from) {
-      case 's3':
-        const foundVideo = await this.findOneOrThrow(videoId);
-        if (!foundVideo.urlS3) {
-          return null;
-        }
-        return await this.s3.getVideoDownloadLink(foundVideo.urlS3, foundVideo.title);
-      case 'vimeo':
-
-      default:
-        break;
-    }
   }
 
   async findOneOrThrow(videoId: number) {
@@ -751,10 +716,5 @@ export class VideoService {
   async getTotalSecondsOfChannel(channelId: number) {
     const result = await this.videoRepository.getTotalSecondsOfChannel(channelId);
     return result || 0;
-  }
-
-  async downloadMultiVideos(urlS3: number[]) {
-    const videos = await this.videoRepository.getManyVideoUseIn(urlS3);
-    return await this.s3.downloadMultiFiles(videos);
   }
 }

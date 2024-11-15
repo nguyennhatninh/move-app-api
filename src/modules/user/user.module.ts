@@ -10,7 +10,6 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { UserRepository } from './repositories/user.repository';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { AwsS3Module } from '../aws-s3/aws-s3.module';
 import { CountryModule } from '../country/country.module';
 import { ChannelModule } from '../channel/channel.module';
 import { FollowModule } from '../follow/follow.module';
@@ -18,12 +17,12 @@ import { VideoService } from '../video/video.service';
 import { VideoModule } from '../video/video.module';
 import { CommentModule } from '../comment/comment.module';
 import { ThumbnailModule } from '../thumbnail/thumbnail.module';
+import { UploadService } from '@/shared/services/storage-firebase.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Account, RefreshToken]),
     forwardRef(() => ThumbnailModule),
-    AwsS3Module,
     CountryModule,
     forwardRef(() => ChannelModule),
     FollowModule,
@@ -38,6 +37,7 @@ import { ThumbnailModule } from '../thumbnail/thumbnail.module';
     ChannelService,
     AccountRepository,
     RefreshTokenRepository,
+    UploadService,
   ],
   exports: [UserService, UserRepository],
 })

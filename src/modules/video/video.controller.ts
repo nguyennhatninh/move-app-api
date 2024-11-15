@@ -33,8 +33,6 @@ import { VideoService } from './video.service';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 import { Role } from '@/entities/enums/role.enum';
 import { Roles } from '@/shared/decorators/roles.decorator';
-import { Response } from 'express';
-import { DownloadMultiDTO } from './dto/download-multi.dto';
 
 @ApiTags('Video')
 @ApiBearerAuth('jwt')
@@ -124,11 +122,6 @@ export class VideoController {
     return await this.videoService.sharingVideoUrlByNativeId(videoId);
   }
 
-  @Get('download/:id')
-  async downloadVideo(@Param('id', ParseIntPipe) videoId: number) {
-    return await this.videoService.downloadVideo(videoId);
-  }
-
   @ApiOperation({ summary: 'overview analytic specific video' })
   @UseGuards(JwtAuthGuard)
   @Get('analytic/:videoId')
@@ -163,33 +156,5 @@ export class VideoController {
     @Query() query: DetailVideoAnalyticDTO,
   ) {
     return await this.videoService.getGraphicState(videoId, countryId, query.option);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('/download-videos')
-  async downloadMultiVideos(@Body() dto: DownloadMultiDTO, @Res() res: Response, @User() user?) {
-    try {
-      const zipStream = await this.videoService.downloadMultiVideos(dto.arrayUrl);
-      res.set({
-        'Content-Type': 'application/zip',
-        'Content-Disposition': 'attachment; filename="videos.zip"',
-      });
-
-      zipStream.pipe(res);
-
-      zipStream.on('end', () => {
-        return 'Download complete'
-      });
-
-      zipStream.on('error', (error) => {
-        console.error('Download error:', error);
-        if (!res.headersSent) {
-          res.status(500).send('Error downloading files');
-        }
-      });
-    } catch (error) {
-      console.error('Failed to initiate download:', error);
-      res.status(500).send('Error initializing download');
-    }
   }
 }

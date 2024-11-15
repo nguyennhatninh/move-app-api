@@ -1,15 +1,13 @@
 import { Thumbnail } from '@/entities/thumbnail.entity';
-import { ApiConfigService } from '@/shared/services/api-config.service';
-import { AwsS3Service } from '@/shared/services/aws-s3.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { ThumbnailRepository } from './thumbnail.repository';
+import { UploadService } from '@/shared/services/storage-firebase.service';
 
 @Injectable()
 export class ThumbnailService {
   constructor(
-    private apiConfig: ApiConfigService,
-    private s3: AwsS3Service,
+    private readonly uploadFileService: UploadService,
     private thumbnailRepository: ThumbnailRepository,
     private readonly i18n: I18nService,
   ) {}
@@ -17,7 +15,7 @@ export class ThumbnailService {
   async saveThumbnails(files: Array<Express.Multer.File>, selected: number, videoId: number) {
     const result = await Promise.all(
       files.map(async (file, index) => {
-        const linkThumbnail = await this.s3.uploadImage(file);
+        const linkThumbnail = await this.uploadFileService.uploadFile(file);
         if (selected === index) {
           this.thumbnailRepository
             .saveThumbnail(linkThumbnail, true, videoId)

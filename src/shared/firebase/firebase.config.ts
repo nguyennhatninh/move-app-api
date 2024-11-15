@@ -11,7 +11,9 @@ const serviceAccount = {
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
   databaseURL: 'https://move-project-51201-default-rtdb.asia-southeast1.firebasedatabase.app/',
+  storageBucket: 'gs://move-project-51201.appspot.com',
 });
 
 export const firebaseAdmin = admin;
 export const db = admin.database();
+export const firebaseStorage = admin.storage().bucket();

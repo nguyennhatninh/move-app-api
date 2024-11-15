@@ -45,7 +45,11 @@ export class UserController {
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiConsumes('multipart/form-data')
   @UseGuards(JwtAuthGuard)
-  async updateUser(@User() user, @UploadedFile() file: IFile, @Body() updateUserDto: UpdateUserDto) {
+  async updateUser(
+    @User() user,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return await this.userService.updateUser(user.id, updateUserDto, file);
   }
 

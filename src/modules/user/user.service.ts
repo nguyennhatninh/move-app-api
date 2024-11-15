@@ -3,7 +3,6 @@ import { TypeAccount } from '@/entities/enums/typeAccount.enum';
 import { RefreshToken } from '@/entities/refresh-token.entity';
 import { User } from '@/entities/user.entity';
 import { IFile } from '@/shared/interfaces/file.interface';
-import { AwsS3Service } from '@/shared/services/aws-s3.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { I18nService } from 'nestjs-i18n';
@@ -17,6 +16,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AccountRepository } from './repositories/account.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { UserRepository } from './repositories/user.repository';
+import { UploadService } from '@/shared/services/storage-firebase.service';
 
 @Injectable()
 export class UserService {
@@ -24,7 +24,7 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly accountRepository: AccountRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
-    private readonly awsS3Service: AwsS3Service,
+    private readonly uploadService: UploadService,
     private readonly countryService: CountryService,
     private readonly channelRepository: ChannelRepository,
     private readonly i18n: I18nService,
@@ -139,7 +139,7 @@ export class UserService {
     return result;
   }
 
-  async updateUser(userId: number, dto: UpdateUserDto, file?: IFile): Promise<UpdateResult> {
+  async updateUser(userId: number, dto: UpdateUserDto, file?: Express.Multer.File): Promise<UpdateResult> {
     try {
       const dataUpdate = dto;
 
@@ -160,7 +160,7 @@ export class UserService {
       }
 
       if (file) {
-        const image = await this.awsS3Service.uploadAvatar(file);
+        const image = await this.uploadService.uploadAvatar(file);
         const channel = await this.channelRepository.getChannelByUserId(userId);
         if (channel) {
           await this.channelRepository.editChannel(channel.id, { image: image });

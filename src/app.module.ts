@@ -8,7 +8,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { I18nMiddleware } from 'nestjs-i18n';
 import { DatabaseModule } from './db/database.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { AwsS3Module } from './modules/aws-s3/aws-s3.module';
 import { CategoryModule } from './modules/category/category.module';
 import { CommentReactionModule } from './modules/comment-reaction/comment-reaction.module';
 import { CountryModule } from './modules/country/country.module';
@@ -32,7 +31,6 @@ import { ApiConfigService } from './shared/services/api-config.service';
 import { RedisModule } from './shared/services/redis/redis.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ViewModule } from './modules/view/view.module';
-import { ChannelModule } from './modules/channel/channel.module';
 import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
@@ -51,7 +49,6 @@ import { AdminModule } from './modules/admin/admin.module';
     UserModule,
     AuthModule,
     DeeplinkModule,
-    AwsS3Module,
     VideoModule,
     CategoryModule,
     ThumbnailModule,
