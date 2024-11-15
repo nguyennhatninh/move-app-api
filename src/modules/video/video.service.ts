@@ -248,7 +248,7 @@ export class VideoService {
       }
 
       if (thumbnail) {
-        const thumbnailUrl = await this.uploadService.uploadFile(thumbnail);
+        const thumbnailUrl = await this.uploadService.uploadFile(thumbnail, 'thumbnails');
 
         await this.thumbnailService.updateThumbnail(thumbnailUrl, true, videoId);
       }

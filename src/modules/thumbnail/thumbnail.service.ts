@@ -15,7 +15,7 @@ export class ThumbnailService {
   async saveThumbnails(files: Array<Express.Multer.File>, selected: number, videoId: number) {
     const result = await Promise.all(
       files.map(async (file, index) => {
-        const linkThumbnail = await this.uploadFileService.uploadFile(file);
+        const linkThumbnail = await this.uploadFileService.uploadFile(file, 'thumbnails');
         if (selected === index) {
           this.thumbnailRepository
             .saveThumbnail(linkThumbnail, true, videoId)

@@ -1,5 +1,4 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { VideoTrendRepository } from './video-trend.repository';
 import { Repository } from 'typeorm';
 import { VideoTrend } from '@/entities/video-trend.entity';
 
@@ -25,6 +24,20 @@ export class VideoTrendService {
   async deleteAll() {
     await this.videoTrendRepository.clear();
   }
+
+  async deleteVideoOld(limit: number) {
+    const oldVideos = await this.videoTrendRepository.find({
+      take: limit,
+      order: {
+        createdAt: 'ASC',
+      },
+    });
+
+    for (const video of oldVideos) {
+      await this.videoTrendRepository.delete(video.id);
+    }
+  }
+
   async getAll() {
     return await this.videoTrendRepository.find();
   }

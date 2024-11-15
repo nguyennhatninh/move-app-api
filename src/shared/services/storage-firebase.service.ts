@@ -8,10 +8,10 @@ import { I18nService } from 'nestjs-i18n';
 @Injectable()
 export class UploadService {
   constructor(private readonly i18n: I18nService) {}
-  async uploadFile(file: Express.Multer.File): Promise<string> {
+  async uploadFile(file: Express.Multer.File, type?: string): Promise<string> {
     const filename = `${uuidv4()}${extname(file.originalname)}`;
-
-    const fileRef = firebaseStorage.file(filename);
+    const filePath = `${type}/${filename}`;
+    const fileRef = firebaseStorage.file(filePath);
     const stream = fileRef.createWriteStream({
       metadata: {
         contentType: file.mimetype,
@@ -23,7 +23,7 @@ export class UploadService {
       stream.on('finish', async () => {
         await fileRef.makePublic();
 
-        const url = `https://storage.googleapis.com/${firebaseStorage.name}/${filename}`;
+        const url = `https://storage.googleapis.com/${firebaseStorage.name}/${filePath}`;
         resolve(url);
       });
       stream.end(file.buffer);
@@ -32,6 +32,6 @@ export class UploadService {
 
   async uploadAvatar(file: Express.Multer.File): Promise<string> {
     await validateAvatarFile(file, this.i18n);
-    return await this.uploadFile(file);
+    return await this.uploadFile(file, 'avatar');
   }
 }

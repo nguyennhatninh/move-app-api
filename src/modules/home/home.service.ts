@@ -1,21 +1,17 @@
 import { Category } from '@/entities/category.entity';
 import { Video } from '@/entities/video.entity';
 import { WatchingVideoHistory } from '@/entities/watching-video-history.entity';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
-import { User } from '@/entities/user.entity';
 import { ChannelItem, VideoItemDto } from './dto/video-item.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { VideoTrendService } from '../video-trend/video-trend.service';
 import { ApiConfigService } from '@/shared/services/api-config.service';
 import { Channel } from '@/entities/channel.entity';
-import { VideoTrend } from '@/entities/video-trend.entity';
 import { PaginationDto } from '../video/dto/request/pagination.dto';
 import { objectResponse } from '../../shared/utils/response-metadata.function';
 import { PaginationMetadata } from '../video/dto/response/pagination.meta';
-import { VideoService } from '../video/video.service';
-import { VimeoService } from '@/shared/services/vimeo.service';
 import { ThumbnailService } from '../thumbnail/thumbnail.service';
 import { ChannelService } from '../channel/channel.service';
 import { CategoryService } from '../category/category.service';
@@ -25,27 +21,16 @@ export class HomeService {
   constructor(
     @InjectRepository(Video) private videoRepository: Repository<Video>,
     @InjectRepository(Category) private cateRepository: Repository<Category>,
-    @InjectRepository(WatchingVideoHistory) private watchingRepository: Repository<WatchingVideoHistory>,
-    @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Channel) private channelRepository: Repository<Channel>,
-    @InjectRepository(VideoTrend) private readonly videoTrendRepository: Repository<VideoTrend>,
-    private readonly videoService: VideoService,
-    private vimeoService: VimeoService,
     private apiConfig: ApiConfigService,
     private videoTrendService: VideoTrendService,
     private thumbnailService: ThumbnailService,
     private channelService: ChannelService,
     private categoryService: CategoryService,
-    @Inject('TIME_CRON_JOB') private readonly timeCronJob: number,
-  ) {
-    // this.timeCronJob = this.apiConfig.getString('TIME_CRON_JOB');
-  }
+  ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async createListVideoHotTrend() {
-    // clear video hot trend
-    await this.videoTrendService.deleteAll();
-
     //The video was posted 14 days ago
     const numberDayValid = this.apiConfig.getNumber('NUMBER_DAY_VALID');
     const viewDailyValid = this.apiConfig.getNumber('VIEW_DAILY_VALID');
@@ -67,7 +52,7 @@ export class HomeService {
       .innerJoinAndSelect('video.category', 'category')
       .where('video.createdAt <= :postedDateValid', { postedDateValid: postedDateValid })
       .andWhere('video.isPublish = true')
-      .andWhere('views.viewDate = :yesterday', { yesterday: formattedYesterday })
+      .andWhere('views.viewDate >= :yesterday', { yesterday: formattedYesterday })
       .andWhere('views.totalView >= :totalView', { totalView: viewDailyValid })
       .andWhere('video.ratings >= :rating', { rating: ratingValid })
       .andWhere('video.numberOfViews >= :total', { total: viewTotalValid })
@@ -91,6 +76,12 @@ export class HomeService {
         'category.title',
       ])
       .getMany();
+
+    const numberVideoOutTrend = 10 - result.length;
+
+    if (numberVideoOutTrend > 0) {
+      await this.videoTrendService.deleteVideoOld(numberVideoOutTrend);
+    }
 
     const banners = [];
     result.forEach(async (obj) => {
