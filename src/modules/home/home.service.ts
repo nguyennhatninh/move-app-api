@@ -80,7 +80,7 @@ export class HomeService {
     const numberVideoOutTrend = 10 - result.length;
 
     if (numberVideoOutTrend > 0) {
-      await this.videoTrendService.deleteVideoOld(numberVideoOutTrend);
+      await this.videoTrendService.deleteVideoOld(result.length);
     }
 
     const banners = [];
