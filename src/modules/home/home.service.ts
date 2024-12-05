@@ -77,9 +77,7 @@ export class HomeService {
       ])
       .getMany();
 
-    const numberVideoOutTrend = 10 - result.length;
-
-    if (numberVideoOutTrend > 0) {
+    if (result.length > 0) {
       await this.videoTrendService.deleteVideoOld(result.length);
     }
 
